@@ -1,0 +1,693 @@
+[
+  {
+    "name": "Akamai",
+    "slug": "akamai",
+    "envVars": [
+      "EDGERC"
+    ],
+    "primaryEnvVar": "EDGERC"
+  },
+  {
+    "name": "Anthropic",
+    "slug": "anthropic",
+    "envVars": [
+      "ANTHROPIC_API_KEY"
+    ],
+    "primaryEnvVar": "ANTHROPIC_API_KEY"
+  },
+  {
+    "name": "Argo CD",
+    "slug": "argocd",
+    "envVars": [
+      "ARGOCD_AUTH_TOKEN",
+      "ARGOCD_SERVER"
+    ],
+    "primaryEnvVar": "ARGOCD_AUTH_TOKEN"
+  },
+  {
+    "name": "AWS",
+    "slug": "aws",
+    "envVars": [
+      "AWS_ACCESS_KEY_ID",
+      "AWS_DEFAULT_REGION",
+      "AWS_SECRET_ACCESS_KEY",
+      "AWS_SESSION_TOKEN"
+    ],
+    "primaryEnvVar": "AWS_ACCESS_KEY_ID"
+  },
+  {
+    "name": "Axiom",
+    "slug": "axiom",
+    "envVars": [
+      "AXIOM_DEPLOYMENT",
+      "AXIOM_ORG_ID",
+      "AXIOM_TOKEN"
+    ],
+    "primaryEnvVar": "AXIOM_TOKEN"
+  },
+  {
+    "name": "Binance",
+    "slug": "binance",
+    "envVars": [
+      "BINANCE_API_KEY",
+      "BINANCE_API_SECRET"
+    ],
+    "primaryEnvVar": "BINANCE_API_KEY"
+  },
+  {
+    "name": "Cachix",
+    "slug": "cachix",
+    "envVars": [
+      "CACHIX_AUTH_TOKEN"
+    ],
+    "primaryEnvVar": "CACHIX_AUTH_TOKEN"
+  },
+  {
+    "name": "Cargo",
+    "slug": "cargo",
+    "envVars": [
+      "CARGO_REGISTRY_TOKEN"
+    ],
+    "primaryEnvVar": "CARGO_REGISTRY_TOKEN"
+  },
+  {
+    "name": "CircleCI",
+    "slug": "circleci",
+    "envVars": [
+      "CIRCLECI_CLI_TOKEN"
+    ],
+    "primaryEnvVar": "CIRCLECI_CLI_TOKEN"
+  },
+  {
+    "name": "Civo",
+    "slug": "civo",
+    "envVars": [
+      "CIVO_TOKEN"
+    ],
+    "primaryEnvVar": "CIVO_TOKEN"
+  },
+  {
+    "name": "Cline",
+    "slug": "cline",
+    "envVars": [
+      "CLINE_API_KEY"
+    ],
+    "primaryEnvVar": "CLINE_API_KEY"
+  },
+  {
+    "name": "Cloudflare Workers",
+    "slug": "wrangler",
+    "envVars": [
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_API_TOKEN"
+    ],
+    "primaryEnvVar": "CLOUDFLARE_API_TOKEN"
+  },
+  {
+    "name": "Confluent",
+    "slug": "confluent",
+    "envVars": [
+      "CONFLUENT_CLOUD_EMAIL",
+      "CONFLUENT_CLOUD_ORGANIZATION_ID",
+      "CONFLUENT_CLOUD_PASSWORD",
+      "CONFLUENT_PLATFORM_CA_CERT_PATH",
+      "CONFLUENT_PLATFORM_MDS_URL",
+      "CONFLUENT_PLATFORM_PASSWORD",
+      "CONFLUENT_PLATFORM_USERNAME"
+    ],
+    "primaryEnvVar": "CONFLUENT_CLOUD_PASSWORD"
+  },
+  {
+    "name": "CrateDB",
+    "slug": "cratedb",
+    "envVars": [
+      "CRATEPW"
+    ],
+    "primaryEnvVar": "CRATEPW"
+  },
+  {
+    "name": "Crowdin",
+    "slug": "crowdin",
+    "envVars": [
+      "CROWDIN_BASE_URL",
+      "CROWDIN_PERSONAL_TOKEN",
+      "CROWDIN_PROJECT_ID"
+    ],
+    "primaryEnvVar": "CROWDIN_PERSONAL_TOKEN"
+  },
+  {
+    "name": "Cursor",
+    "slug": "cursor",
+    "envVars": [
+      "CURSOR_API_KEY"
+    ],
+    "primaryEnvVar": "CURSOR_API_KEY"
+  },
+  {
+    "name": "Databricks",
+    "slug": "databricks",
+    "envVars": [
+      "DATABRICKS_HOST",
+      "DATABRICKS_TOKEN"
+    ],
+    "primaryEnvVar": "DATABRICKS_TOKEN"
+  },
+  {
+    "name": "Datadog",
+    "slug": "datadog",
+    "envVars": [
+      "DATADOG_API_KEY",
+      "DATADOG_APP_KEY"
+    ],
+    "primaryEnvVar": "DATADOG_API_KEY"
+  },
+  {
+    "name": "Descope",
+    "slug": "descope",
+    "envVars": [
+      "DESCOPE_MANAGEMENT_KEY",
+      "DESCOPE_PROJECT_ID"
+    ],
+    "primaryEnvVar": "DESCOPE_MANAGEMENT_KEY"
+  },
+  {
+    "name": "DigitalOcean",
+    "slug": "digitalocean",
+    "envVars": [
+      "DIGITALOCEAN_ACCESS_TOKEN"
+    ],
+    "primaryEnvVar": "DIGITALOCEAN_ACCESS_TOKEN"
+  },
+  {
+    "name": "Doppler",
+    "slug": "doppler",
+    "envVars": [
+      "DOPPLER_TOKEN"
+    ],
+    "primaryEnvVar": "DOPPLER_TOKEN"
+  },
+  {
+    "name": "Exercism",
+    "slug": "exercism",
+    "envVars": [],
+    "primaryEnvVar": null
+  },
+  {
+    "name": "Expo",
+    "slug": "expo",
+    "envVars": [
+      "EXPO_TOKEN"
+    ],
+    "primaryEnvVar": "EXPO_TOKEN"
+  },
+  {
+    "name": "Fastly",
+    "slug": "fastly",
+    "envVars": [
+      "FASTLY_API_TOKEN"
+    ],
+    "primaryEnvVar": "FASTLY_API_TOKEN"
+  },
+  {
+    "name": "Fly.io",
+    "slug": "flyctl",
+    "envVars": [
+      "FLY_ACCESS_TOKEN"
+    ],
+    "primaryEnvVar": "FLY_ACCESS_TOKEN"
+  },
+  {
+    "name": "FOSSA",
+    "slug": "fossa",
+    "envVars": [
+      "FOSSA_API_KEY"
+    ],
+    "primaryEnvVar": "FOSSA_API_KEY"
+  },
+  {
+    "name": "Gitea",
+    "slug": "gitea",
+    "envVars": [],
+    "primaryEnvVar": null
+  },
+  {
+    "name": "GitHub",
+    "slug": "github",
+    "envVars": [
+      "GH_ENTERPRISE_TOKEN",
+      "GH_HOST",
+      "GH_TOKEN",
+      "GITHUB_ENTERPRISE_TOKEN",
+      "GITHUB_TOKEN"
+    ],
+    "primaryEnvVar": "GH_TOKEN"
+  },
+  {
+    "name": "GitHub Copilot",
+    "slug": "copilot",
+    "envVars": [
+      "COPILOT_GITHUB_TOKEN"
+    ],
+    "primaryEnvVar": "COPILOT_GITHUB_TOKEN"
+  },
+  {
+    "name": "GitLab",
+    "slug": "gitlab",
+    "envVars": [
+      "GITLAB_API_HOST",
+      "GITLAB_HOST",
+      "GITLAB_TOKEN"
+    ],
+    "primaryEnvVar": "GITLAB_TOKEN"
+  },
+  {
+    "name": "Google Gemini CLI",
+    "slug": "gemini",
+    "envVars": [
+      "GEMINI_API_KEY"
+    ],
+    "primaryEnvVar": "GEMINI_API_KEY"
+  },
+  {
+    "name": "HashiCorp Vault",
+    "slug": "vault",
+    "envVars": [
+      "VAULT_ADDR",
+      "VAULT_NAMESPACE",
+      "VAULT_TOKEN"
+    ],
+    "primaryEnvVar": "VAULT_TOKEN"
+  },
+  {
+    "name": "Heroku",
+    "slug": "heroku",
+    "envVars": [
+      "HEROKU_API_KEY"
+    ],
+    "primaryEnvVar": "HEROKU_API_KEY"
+  },
+  {
+    "name": "Hetzner Cloud",
+    "slug": "hcloud",
+    "envVars": [
+      "HCLOUD_TOKEN"
+    ],
+    "primaryEnvVar": "HCLOUD_TOKEN"
+  },
+  {
+    "name": "Homebrew",
+    "slug": "homebrew",
+    "envVars": [
+      "HOMEBREW_GITHUB_API_TOKEN"
+    ],
+    "primaryEnvVar": "HOMEBREW_GITHUB_API_TOKEN"
+  },
+  {
+    "name": "Hugging Face",
+    "slug": "huggingface",
+    "envVars": [
+      "HF_ENDPOINT",
+      "HF_INFERENCE_ENDPOINT",
+      "HUGGING_FACE_HUB_TOKEN"
+    ],
+    "primaryEnvVar": "HUGGING_FACE_HUB_TOKEN"
+  },
+  {
+    "name": "InfluxDB",
+    "slug": "influxdb",
+    "envVars": [
+      "INFLUX_HOST",
+      "INFLUX_ORG",
+      "INFLUX_TOKEN"
+    ],
+    "primaryEnvVar": "INFLUX_TOKEN"
+  },
+  {
+    "name": "JetBrains Junie",
+    "slug": "junie",
+    "envVars": [
+      "JUNIE_API_KEY"
+    ],
+    "primaryEnvVar": "JUNIE_API_KEY"
+  },
+  {
+    "name": "Kaggle",
+    "slug": "kaggle",
+    "envVars": [
+      "KAGGLE_KEY",
+      "KAGGLE_USERNAME"
+    ],
+    "primaryEnvVar": "KAGGLE_KEY"
+  },
+  {
+    "name": "Kiro",
+    "slug": "kiro",
+    "envVars": [
+      "KIRO_API_KEY"
+    ],
+    "primaryEnvVar": "KIRO_API_KEY"
+  },
+  {
+    "name": "Lacework",
+    "slug": "lacework",
+    "envVars": [
+      "LW_ACCOUNT",
+      "LW_API_KEY",
+      "LW_API_SECRET"
+    ],
+    "primaryEnvVar": "LW_API_KEY"
+  },
+  {
+    "name": "Laravel Forge",
+    "slug": "laravelforge",
+    "envVars": [
+      "FORGE_API_TOKEN"
+    ],
+    "primaryEnvVar": "FORGE_API_TOKEN"
+  },
+  {
+    "name": "Laravel Vapor",
+    "slug": "laravelvapor",
+    "envVars": [
+      "VAPOR_API_TOKEN"
+    ],
+    "primaryEnvVar": "VAPOR_API_TOKEN"
+  },
+  {
+    "name": "Linode",
+    "slug": "linode",
+    "envVars": [
+      "LINODE_CLI_TOKEN"
+    ],
+    "primaryEnvVar": "LINODE_CLI_TOKEN"
+  },
+  {
+    "name": "LocalStack",
+    "slug": "localstack",
+    "envVars": [
+      "LOCALSTACK_AUTH_TOKEN"
+    ],
+    "primaryEnvVar": "LOCALSTACK_AUTH_TOKEN"
+  },
+  {
+    "name": "MongoDB Atlas",
+    "slug": "atlas",
+    "envVars": [
+      "MONGODB_ATLAS_PRIVATE_API_KEY",
+      "MONGODB_ATLAS_PUBLIC_API_KEY"
+    ],
+    "primaryEnvVar": "MONGODB_ATLAS_PRIVATE_API_KEY"
+  },
+  {
+    "name": "MySQL",
+    "slug": "mysql",
+    "envVars": [],
+    "primaryEnvVar": null
+  },
+  {
+    "name": "ngrok",
+    "slug": "ngrok",
+    "envVars": [
+      "NGROK_API_KEY",
+      "NGROK_AUTHTOKEN"
+    ],
+    "primaryEnvVar": "NGROK_API_KEY"
+  },
+  {
+    "name": "Oh Dear",
+    "slug": "ohdear",
+    "envVars": [
+      "OHDEAR_CONFIG_FILE_PATH"
+    ],
+    "primaryEnvVar": "OHDEAR_CONFIG_FILE_PATH"
+  },
+  {
+    "name": "Okta",
+    "slug": "okta",
+    "envVars": [
+      "OKTA_CLIENT_ORGURL",
+      "OKTA_CLIENT_TOKEN"
+    ],
+    "primaryEnvVar": "OKTA_CLIENT_TOKEN"
+  },
+  {
+    "name": "OpenAI",
+    "slug": "openai",
+    "envVars": [
+      "OPENAI_API_KEY"
+    ],
+    "primaryEnvVar": "OPENAI_API_KEY"
+  },
+  {
+    "name": "OpenCode",
+    "slug": "opencode",
+    "envVars": [
+      "OPENCODE_API_KEY"
+    ],
+    "primaryEnvVar": "OPENCODE_API_KEY"
+  },
+  {
+    "name": "OpenTofu",
+    "slug": "tofu",
+    "envVars": [],
+    "primaryEnvVar": null
+  },
+  {
+    "name": "Pipedream",
+    "slug": "pipedream",
+    "envVars": [],
+    "primaryEnvVar": null
+  },
+  {
+    "name": "PostgreSQL",
+    "slug": "postgresql",
+    "envVars": [
+      "PGDATABASE",
+      "PGHOST",
+      "PGPASSWORD",
+      "PGPORT",
+      "PGUSER"
+    ],
+    "primaryEnvVar": "PGPASSWORD"
+  },
+  {
+    "name": "Pulumi",
+    "slug": "pulumi",
+    "envVars": [
+      "PULUMI_ACCESS_TOKEN",
+      "PULUMI_BACKEND_URL"
+    ],
+    "primaryEnvVar": "PULUMI_ACCESS_TOKEN"
+  },
+  {
+    "name": "PyPI",
+    "slug": "pypi",
+    "envVars": [
+      "FLIT_PASSWORD",
+      "FLIT_USERNAME",
+      "HATCH_INDEX_AUTH",
+      "HATCH_INDEX_USER",
+      "TWINE_PASSWORD",
+      "TWINE_USERNAME"
+    ],
+    "primaryEnvVar": "FLIT_PASSWORD"
+  },
+  {
+    "name": "ReadMe",
+    "slug": "readme",
+    "envVars": [
+      "RDME_API_KEY",
+      "RDME_EMAIL",
+      "RDME_PROJECT"
+    ],
+    "primaryEnvVar": "RDME_API_KEY"
+  },
+  {
+    "name": "Redis",
+    "slug": "redis",
+    "envVars": [
+      "REDISCLI_AUTH"
+    ],
+    "primaryEnvVar": "REDISCLI_AUTH"
+  },
+  {
+    "name": "Redis Cloud",
+    "slug": "rediscloud",
+    "envVars": [
+      "REDISCLOUD_ACCESS_KEY",
+      "REDISCLOUD_SECRET_KEY"
+    ],
+    "primaryEnvVar": "REDISCLOUD_ACCESS_KEY"
+  },
+  {
+    "name": "Scaleway",
+    "slug": "scaleway",
+    "envVars": [
+      "SCW_ACCESS_KEY",
+      "SCW_DEFAULT_ORGANIZATION_ID",
+      "SCW_DEFAULT_PROJECT_ID",
+      "SCW_DEFAULT_REGION",
+      "SCW_DEFAULT_ZONE",
+      "SCW_SECRET_KEY"
+    ],
+    "primaryEnvVar": "SCW_ACCESS_KEY"
+  },
+  {
+    "name": "Sentry",
+    "slug": "sentry",
+    "envVars": [
+      "SENTRY_AUTH_TOKEN",
+      "SENTRY_ORG",
+      "SENTRY_PROJECT",
+      "SENTRY_URL"
+    ],
+    "primaryEnvVar": "SENTRY_AUTH_TOKEN"
+  },
+  {
+    "name": "Snowflake",
+    "slug": "snowflake",
+    "envVars": [
+      "SNOWSQL_ACCOUNT",
+      "SNOWSQL_PWD",
+      "SNOWSQL_USER"
+    ],
+    "primaryEnvVar": "SNOWSQL_PWD"
+  },
+  {
+    "name": "Snyk",
+    "slug": "snyk",
+    "envVars": [
+      "SNYK_TOKEN"
+    ],
+    "primaryEnvVar": "SNYK_TOKEN"
+  },
+  {
+    "name": "Sourcegraph",
+    "slug": "sourcegraph",
+    "envVars": [
+      "SRC_ACCESS_TOKEN",
+      "SRC_ENDPOINT"
+    ],
+    "primaryEnvVar": "SRC_ACCESS_TOKEN"
+  },
+  {
+    "name": "Stripe",
+    "slug": "stripe",
+    "envVars": [
+      "STRIPE_API_KEY"
+    ],
+    "primaryEnvVar": "STRIPE_API_KEY"
+  },
+  {
+    "name": "Terraform",
+    "slug": "terraform",
+    "envVars": [],
+    "primaryEnvVar": null
+  },
+  {
+    "name": "Todoist",
+    "slug": "todoist",
+    "envVars": [],
+    "primaryEnvVar": null
+  },
+  {
+    "name": "Treasure Data",
+    "slug": "treasuredata",
+    "envVars": [
+      "TD_API_KEY"
+    ],
+    "primaryEnvVar": "TD_API_KEY"
+  },
+  {
+    "name": "Tugboat",
+    "slug": "tugboat",
+    "envVars": [
+      "TUGBOAT_API_TOKEN"
+    ],
+    "primaryEnvVar": "TUGBOAT_API_TOKEN"
+  },
+  {
+    "name": "Twilio",
+    "slug": "twilio",
+    "envVars": [
+      "TWILIO_ACCOUNT_SID",
+      "TWILIO_API_KEY",
+      "TWILIO_API_SECRET"
+    ],
+    "primaryEnvVar": "TWILIO_API_KEY"
+  },
+  {
+    "name": "UpCloud",
+    "slug": "upcloud",
+    "envVars": [
+      "UPCLOUD_PASSWORD",
+      "UPCLOUD_USERNAME"
+    ],
+    "primaryEnvVar": "UPCLOUD_PASSWORD"
+  },
+  {
+    "name": "Upstash",
+    "slug": "upstash",
+    "envVars": [
+      "UPSTASH_API_KEY",
+      "UPSTASH_EMAIL"
+    ],
+    "primaryEnvVar": "UPSTASH_API_KEY"
+  },
+  {
+    "name": "Vercel",
+    "slug": "vercel",
+    "envVars": [],
+    "primaryEnvVar": null
+  },
+  {
+    "name": "Vertica",
+    "slug": "vertica",
+    "envVars": [
+      "VSQL_DATABASE",
+      "VSQL_HOST",
+      "VSQL_PASSWORD",
+      "VSQL_PORT",
+      "VSQL_USER"
+    ],
+    "primaryEnvVar": "VSQL_PASSWORD"
+  },
+  {
+    "name": "Vultr",
+    "slug": "vultr",
+    "envVars": [
+      "VULTR_API_KEY"
+    ],
+    "primaryEnvVar": "VULTR_API_KEY"
+  },
+  {
+    "name": "YugabyteDB",
+    "slug": "yugabytedb",
+    "envVars": [
+      "PGDATABASE",
+      "PGHOST",
+      "PGPASSWORD",
+      "PGPORT",
+      "PGUSER"
+    ],
+    "primaryEnvVar": "PGPASSWORD"
+  },
+  {
+    "name": "Zapier",
+    "slug": "zapier",
+    "envVars": [
+      "ZAPIER_DEPLOY_KEY"
+    ],
+    "primaryEnvVar": "ZAPIER_DEPLOY_KEY"
+  },
+  {
+    "name": "Zendesk",
+    "slug": "zendesk",
+    "envVars": [
+      "ZENDESK_API_TOKEN",
+      "ZENDESK_EMAIL",
+      "ZENDESK_SUBDOMAIN"
+    ],
+    "primaryEnvVar": "ZENDESK_API_TOKEN"
+  }
+]

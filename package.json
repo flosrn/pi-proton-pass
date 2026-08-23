@@ -1,0 +1,59 @@
+{
+  "name": "@flosrn/pi-proton-pass",
+  "version": "1.0.0",
+  "description": "Proton Pass credential injection for the Pi coding agent via pass-cli.",
+  "homepage": "https://github.com/flosrn/pi-proton-pass",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flosrn/pi-proton-pass.git"
+  },
+  "bugs": {
+    "url": "https://github.com/flosrn/pi-proton-pass/issues"
+  },
+  "license": "MIT",
+  "author": "flosrn",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "files": [
+    "index.ts",
+    "credential-api.ts",
+    "store.ts",
+    "pass.ts",
+    "data/",
+    "ui/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "proton-pass",
+    "pass-cli",
+    "credentials",
+    "secrets"
+  ],
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.84.2",
+    "@earendil-works/pi-tui": "*",
+    "@types/node": "^24.0.0",
+    "typebox": "^1.3.14",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
