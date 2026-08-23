@@ -1,14 +1,15 @@
 /**
  * Bordered Popup TUI Helpers
  *
+ * Copyright (c) 2025 Jeremy Combs
+ * SPDX-License-Identifier: MIT
+ *
+ * Copied from @jmcombs/pi-1password
+ * (packages/1password/ui/bordered-popups.ts). The MIT notice from that
+ * package is reproduced in LICENSE at the repo root.
+ *
  * These are reusable, self-contained helpers for creating polished,
  * consistent bordered popups inside Pi extensions using `ctx.ui.custom({ overlay: true })`.
- *
- * They were originally developed in the 1Password extension and are provided
- * here as a copy-paste starting point for any extension that needs rich
- * interactive flows (select lists with live filtering, text input, confirms)
- * that look and feel better than the basic `ctx.ui.select / input / confirm`.
- *
  * ## Usage
  *
  * ```ts

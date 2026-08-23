@@ -23,7 +23,8 @@
     "data/",
     "ui/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE"
   ],
   "keywords": [
     "pi-package",

@@ -1,0 +1,10 @@
+This repository includes substantial portions of:
+
+  @jmcombs/pi-1password
+  https://github.com/jmcombs/pi-extensions/tree/main/packages/1password
+  Copyright (c) 2025 Jeremy Combs
+  Licensed under the MIT License (see LICENSE)
+
+Copied files include `ui/bordered-popups.ts`. The architecture of
+the credential API, auth.json writers, and setup/diagnose commands
+follows that package.
