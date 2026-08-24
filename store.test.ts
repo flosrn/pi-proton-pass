@@ -47,3 +47,12 @@ describe("parsePassReadRef", () => {
     );
   });
 });
+
+describe("unknown bang forms fail closed", () => {
+  it("does not treat leftover !PROTON_PASS… as a literal", async () => {
+    const { resolveShellValue } = await import("./store.js");
+    expect(
+      await resolveShellValue("!PROTON_PASS_AGENT_REASON=x pass-cli item view --field password"),
+    ).toBeNull();
+  });
+});

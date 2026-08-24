@@ -1,6 +1,6 @@
 /**
  * Credential API round-trip tests — no mocks of project code.
- * Temp auth.json via PI_CODING_AGENT_DIR. Sentinels: `!echo` / `!exit 1`.
+ * Temp auth.json via PI_CODING_AGENT_DIR. Literals + fail-closed bangs.
  */
 
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -40,8 +40,8 @@ afterEach(async () => {
 });
 
 describe("resolveSecret", () => {
-  it("resolves a provider-shaped `!echo` sentinel to the command output", async () => {
-    await writeAuth({ demo: { type: "api_key", key: "!echo resolved-secret" } });
+  it("resolves a provider-shaped literal", async () => {
+    await writeAuth({ demo: { type: "api_key", key: "resolved-secret" } });
     expect(await resolveSecret("demo")).toBe("resolved-secret");
   });
 
@@ -50,59 +50,59 @@ describe("resolveSecret", () => {
     expect(await resolveSecret("demo")).toBe("literal-value");
   });
 
-  it("resolves a bare legacy `!echo` string entry", async () => {
-    await writeAuth({ demo: "!echo legacy-resolved" });
-    expect(await resolveSecret("demo")).toBe("legacy-resolved");
+  it("fails closed on an unknown bang — never shells it", async () => {
+    await writeAuth({
+      demo: {
+        type: "api_key",
+        key: "!PROTON_PASS_AGENT_REASON=x pass-cli item view --field password",
+      },
+    });
+    expect(await resolveSecret("demo")).toBeUndefined();
   });
 
-  it("fails closed to undefined on a failing command — never the raw value", async () => {
-    await writeAuth({ demo: { type: "api_key", key: "!exit 1" } });
-    const out = await resolveSecret("demo");
-    expect(out).toBeUndefined();
-    expect(out).not.toBe("!exit 1");
+  it("fails closed on a !pass read that cannot resolve", async () => {
+    await writeAuth({ demo: { type: "api_key", key: "!pass read 'pass://nope/nope/password'" } });
+    expect(await resolveSecret("demo")).toBeUndefined();
   });
 
   it("returns undefined for a missing name", async () => {
-    await writeAuth({ other: { type: "api_key", key: "!echo x" } });
+    await writeAuth({ other: { type: "api_key", key: "x" } });
     expect(await resolveSecret("demo")).toBeUndefined();
   });
 });
 
 describe("writeProviderAuthEntry + round-trip", () => {
   it("writes the provider shape and reads it back", async () => {
-    const res = await writeProviderAuthEntry("demo", "!echo written-secret");
+    const res = await writeProviderAuthEntry("demo", "written-secret");
     expect(res.success).toBe(true);
-    expect((await readAuth()).demo).toEqual({ type: "api_key", key: "!echo written-secret" });
+    expect((await readAuth()).demo).toEqual({ type: "api_key", key: "written-secret" });
     expect(await resolveSecret("demo")).toBe("written-secret");
   });
 
   it("refuses to clobber an existing key without overwrite", async () => {
-    await writeProviderAuthEntry("demo", "!echo first");
-    const res = await writeProviderAuthEntry("demo", "!echo second");
+    await writeProviderAuthEntry("demo", "first");
+    const res = await writeProviderAuthEntry("demo", "second");
     expect(res.success).toBe(false);
     expect(res.alreadyExists).toBe(true);
     expect(await resolveSecret("demo")).toBe("first");
   });
 
   it("serializes concurrent writes under the lock (both keys land)", async () => {
-    await Promise.all([
-      writeProviderAuthEntry("alpha", "!echo a"),
-      writeProviderAuthEntry("beta", "!echo b"),
-    ]);
+    await Promise.all([writeProviderAuthEntry("alpha", "a"), writeProviderAuthEntry("beta", "b")]);
     const stored = await readAuth();
-    expect(stored.alpha).toEqual({ type: "api_key", key: "!echo a" });
-    expect(stored.beta).toEqual({ type: "api_key", key: "!echo b" });
+    expect(stored.alpha).toEqual({ type: "api_key", key: "a" });
+    expect(stored.beta).toEqual({ type: "api_key", key: "b" });
   });
 });
 
 describe("verifySecret", () => {
   it("reports resolved=true for a value, without returning the value", async () => {
-    await writeAuth({ demo: { type: "api_key", key: "!echo present" } });
+    await writeAuth({ demo: { type: "api_key", key: "present" } });
     expect(await verifySecret("demo")).toEqual({ ok: true, resolved: true });
   });
 
   it("reports resolved=false with an error when nothing resolves", async () => {
-    await writeAuth({ demo: { type: "api_key", key: "!exit 1" } });
+    await writeAuth({ demo: { type: "api_key", key: "!pass read 'pass://nope/nope/password'" } });
     const v = await verifySecret("demo");
     expect(v.ok).toBe(false);
     expect(v.resolved).toBe(false);
@@ -112,7 +112,7 @@ describe("verifySecret", () => {
 
 describe("deleteSecret", () => {
   it("removes an entry so it no longer resolves", async () => {
-    await writeProviderAuthEntry("demo", "!echo gone");
+    await writeProviderAuthEntry("demo", "gone");
     expect(await resolveSecret("demo")).toBe("gone");
     expect((await deleteSecret("demo")).ok).toBe(true);
     expect(Object.hasOwn(await readAuth(), "demo")).toBe(false);

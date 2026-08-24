@@ -5,18 +5,17 @@
  *   { "GH_TOKEN": "!pass read 'pass://Personal/GitHub/password'" }
  *   { "context7": { "type": "api_key", "key": "!pass read 'pass://…'" } }
  *
- * `!pass read` is resolved in this host process via `pass-cli item view --field`.
- * Other `!<cmd>` values run in /bin/sh (test sentinels: `!echo`, `!exit 1`).
- * Fail closed: any error → null / no write of the unresolved raw value.
+ * `!pass read` is resolved in this host process via `pass-cli item view`.
+ * Any other `!…` value fails closed (never executed as a shell command).
+ * Bare strings resolve as literals. Fail closed: error → null.
  */
 
 import { open, mkdir, readFile, rename, unlink, writeFile, chmod } from "node:fs/promises";
 import { join } from "node:path";
-import { exec, execFile } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 
-const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 
 export const PASS_READ_PREFIX = "!pass read ";
@@ -281,20 +280,9 @@ export async function resolveShellValue(raw: unknown): Promise<string | null> {
     return resolvePassRead(ref);
   }
 
-  if (trimmed.startsWith("!")) {
-    try {
-      const cmd = trimmed.slice(1).trim();
-      const { stdout } = await execAsync(cmd, {
-        encoding: "utf8",
-        maxBuffer: 1024 * 1024,
-        timeout: 15000,
-        shell: "/bin/sh",
-      });
-      return (stdout || "").trim();
-    } catch {
-      return null;
-    }
-  }
+  // Unknown bang forms (including leftover `!op read` / `!PROTON_PASS…`)
+  // must not become /bin/sh. Fail closed.
+  if (trimmed.startsWith("!")) return null;
 
   return trimmed || null;
 }
