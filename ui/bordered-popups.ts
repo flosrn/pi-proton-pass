@@ -54,6 +54,7 @@
 
 import type { Theme } from "@earendil-works/pi-coding-agent";
 import type { UiContext } from "../credential-api.js";
+import { applyLineEdit, createLineEditState, renderLineEdit } from "./line-edit.js";
 
 // No static imports from @earendil-works/pi-tui are used for types.
 // We rely on inference for ctx.ui.custom callback parameters (sourced via the
@@ -238,14 +239,17 @@ export async function confirmInBorderedPopup(
 }
 
 /**
- * Bordered popup text input powered by Pi's Editor component.
- * Good for free-text entry while staying inside the custom popup aesthetic.
+ * Bordered popup text input.
  *
- * When `mask` is set the popup renders one `•` per typed code point **instead of**
- * the Editor's own glyphs — the secret is never drawn on screen. The Editor is
- * still used as the (headless) input model so key decoding, paste, and submit all
- * work; we simply never call `editor.render()` in masked mode, so no plaintext is
- * ever emitted. `prompt` is split on `\n` so a multi-line notice renders in full.
+ * Input handling lives in `./line-edit.js` rather than in the host's `Editor`
+ * component: that component needs an `EditorTheme` carrying a full
+ * `symbols: SymbolTheme`, which pi-tui exports as a type only, so every
+ * plugin-built theme made its first render throw and killed the session.
+ * Key *decoding* still comes from the host (`matchesKey`).
+ *
+ * When `mask` is set the popup renders one `•` per typed code point, so a secret
+ * never reaches the screen. `prompt` is split on `\n` so a multi-line notice
+ * renders in full.
  */
 export async function inputInBorderedPopup(
   ctx: UiContext,
@@ -260,47 +264,20 @@ export async function inputInBorderedPopup(
 ): Promise<string | undefined> {
   const help = opts.helpText ?? "Enter to confirm • Esc = cancel";
 
-  // Pure local interface (no extends) for the submit hook.
-  interface EditorHandle {
-    render(w: number): string[];
-    invalidate(): void;
-    handleInput(d: string): void;
-    setText(s: string): void;
-    getText(): string;
-    onSubmit: (value: string) => void;
-  }
-
   // Inference for callback params (see selectInBorderedPopup for rationale).
   return await ctx.ui.custom<string | undefined>(
     async (tui, theme, _kb, done) => {
+      // Dynamic import: static type-only access to pi-tui duplicates the module
+      // declarations nested under pi-coding-agent and breaks tsc strict here
+      // (see the file header).
       const piTui = (await import("@earendil-works/pi-tui")) as unknown as {
-        Editor: new (tui: unknown, theme: unknown) => EditorHandle;
         matchesKey: (data: string, key: string) => boolean;
         truncateToWidth: (s: string, w: number, e?: string, pad?: boolean) => string;
       };
 
-      const { Editor, matchesKey, truncateToWidth: truncateToWidthFn } = piTui;
+      const { matchesKey, truncateToWidth: truncateToWidthFn } = piTui;
 
-      const editorTheme = {
-        borderColor: (s: string) => theme.fg("accent", s),
-        selectList: {
-          selectedPrefix: (t: string) => theme.fg("accent", t),
-          selectedText: (t: string) => theme.fg("accent", t),
-          description: (t: string) => theme.fg("muted", t),
-          scrollInfo: (t: string) => theme.fg("dim", t),
-          noMatch: (t: string) => theme.fg("warning", t),
-        },
-      };
-
-      const editor = new Editor(tui, editorTheme);
-
-      if (opts.defaultValue) {
-        editor.setText(opts.defaultValue);
-      }
-
-      editor.onSubmit = (value: string) => {
-        done(value.trim() || undefined);
-      };
+      let state = createLineEditState(opts.defaultValue);
 
       const popup: {
         render(w: number): string[];
@@ -309,7 +286,6 @@ export async function inputInBorderedPopup(
         dispose?(): void;
       } = {
         render(width: number) {
-          const innerWidth = Math.max(20, width - 4);
           const body: string[] = [];
 
           if (opts.prompt) {
@@ -319,25 +295,24 @@ export async function inputInBorderedPopup(
             body.push("");
           }
 
-          if (opts.mask) {
-            // Never draw the Editor's glyphs; render one bullet per code point.
-            const masked = "•".repeat([...editor.getText()].length);
-            body.push(theme.fg("text", masked));
-          } else {
-            body.push(...editor.render(innerWidth));
-          }
+          body.push(theme.fg("text", renderLineEdit(state, { mask: opts.mask })));
 
           return renderBorderedBox(width, opts.title, body, help, theme, truncateToWidthFn);
         },
         invalidate() {
-          editor.invalidate();
+          tui.requestRender();
         },
         handleInput(data: string) {
-          if (matchesKey(data, "escape")) {
+          const outcome = applyLineEdit(state, data, matchesKey);
+          if (outcome.kind === "cancel") {
             done(undefined);
             return;
           }
-          editor.handleInput(data);
+          if (outcome.kind === "submit") {
+            done(outcome.value.trim() || undefined);
+            return;
+          }
+          state = outcome.state;
           tui.requestRender();
         },
       };

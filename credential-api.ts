@@ -9,6 +9,7 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { inputInBorderedPopup, selectInBorderedPopup } from "./ui/bordered-popups.js";
 import { getPassStatus, pickPassReference } from "./pass.js";
+import { capturePassItem } from "./capture.js";
 import {
   deleteAuthEntry,
   PASS_READ_PREFIX,
@@ -68,6 +69,51 @@ async function promptMaskedKey(ctx: UiContext, label: string): Promise<string | 
     helpText: "Enter to save • Esc = cancel",
     mask: true,
   });
+}
+
+/**
+ * Take a brand-new secret and put it in the vault, returning only its reference.
+ *
+ * This is `agent/scripts/pass-secret.sh` without leaving the session: the value
+ * is typed into a masked popup, crosses one pipe into `pass-cli`'s stdin, is
+ * verified by fingerprint, and never reaches the transcript, an argv, or disk.
+ * Prefer it over storing a literal in `auth.json` whenever a vault is reachable.
+ */
+export async function captureSecretIntoVault(
+  ctx: UiContext,
+  opts: { readonly label: string; readonly suggestedTitle: string; readonly defaultVault?: string },
+): Promise<string | undefined> {
+  const title = await inputInBorderedPopup(ctx, {
+    title: "Name this item in Proton Pass",
+    prompt:
+      "Use a distinct title — date it if you expect to rotate.\n" +
+      "An existing title is refused: Proton Pass would keep serving the older item.",
+    defaultValue: opts.suggestedTitle,
+    helpText: "Enter to confirm • Esc = cancel",
+  });
+  if (!title) return undefined;
+
+  const vault = await inputInBorderedPopup(ctx, {
+    title: "Which vault?",
+    prompt: "Proton Pass vault that should hold the item.",
+    defaultValue: opts.defaultVault ?? "Personal",
+    helpText: "Enter to confirm • Esc = cancel",
+  });
+  if (!vault) return undefined;
+
+  const secret = await promptMaskedKey(ctx, opts.label);
+  if (!secret) return undefined;
+
+  const result = await capturePassItem({ title, vault, secret });
+  if (!result.ok) {
+    ctx.ui.notify(result.message, "error");
+    return undefined;
+  }
+  ctx.ui.notify(
+    `Stored in Proton Pass as "${title}" and verified by fingerprint — the value was never printed.`,
+    "info",
+  );
+  return result.ref;
 }
 
 async function saveAndReport(
@@ -145,8 +191,8 @@ export async function onboardSecret(ctx: UiContext, opts: OnboardOptions): Promi
         },
         {
           value: "paste",
-          label: "Type or paste the key",
-          description: "Manually insert your key",
+          label: "Type or paste the key now",
+          description: "Masked input, stored in your vault — auth.json only gets the reference",
         },
         {
           value: "ref",
@@ -167,9 +213,14 @@ export async function onboardSecret(ctx: UiContext, opts: OnboardOptions): Promi
     }
 
     if (source === "paste") {
-      const key = await promptMaskedKey(ctx, opts.label);
-      if (!key) return CANCELLED;
-      return saveAndReport(opts, key, overwrite, "literal", true);
+      // Deliberately NOT a literal in auth.json: with a vault reachable, a
+      // plaintext copy on disk would be a silent downgrade of the same gesture.
+      const captured = await captureSecretIntoVault(ctx, {
+        label: opts.label,
+        suggestedTitle: `${opts.label} (OMP)`,
+      });
+      if (!captured) return CANCELLED;
+      return saveAndReport(opts, `${PASS_READ_PREFIX}'${captured}'`, overwrite, "ref", true);
     }
 
     const ref = await inputInBorderedPopup(ctx, {

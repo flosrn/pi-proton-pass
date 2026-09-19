@@ -26,8 +26,10 @@ import {
 } from "./store.js";
 import { formatPassStatus, getPassStatus, loadCuratedTools, pickPassReference } from "./pass.js";
 import type { CuratedTool } from "./pass.js";
+import { captureSecretIntoVault } from "./credential-api.js";
 
 export {
+  captureSecretIntoVault,
   changeSecret,
   deleteSecret,
   isProtonPassAvailable,
@@ -118,14 +120,33 @@ export default async function (pi: ExtensionAPI): Promise<void> {
   await warmPassSessionIfNeeded();
 
   const cwd = process.cwd();
-  const injectedBash = createBashTool(cwd, {
-    spawnHook: ({ command, cwd: hookCwd, env }) => ({
-      command,
-      cwd: hookCwd,
-      env: { ...env, ...currentShellEnv },
-    }),
-  });
-  pi.registerTool(injectedBash);
+
+  // Registering a tool under a built-in's name is not free: the host marks that
+  // name non-built-in (`setToolBuiltIn(name, false)`), and its transcript card
+  // then resolves with `useBuiltInRenderer: false`. For `bash` that costs the
+  // framed card — syntax-highlighted command, `Output` divider, the styled
+  // `⟨Wall: …s | Timeout: …s⟩` footer — and leaves the legacy shim's minimal
+  // renderer instead: a bold `bash <command>` line plus the raw model-facing
+  // result text, notices included. Measured on omp 18.0.6.
+  //
+  // So the wrapper is registered only when it has something to inject. With an
+  // empty `auth.json` the spawn hook added zero variables and the whole cost was
+  // paid for nothing.
+  let injectedBashRegistered = false;
+  const registerInjectedBashIfNeeded = (): void => {
+    if (injectedBashRegistered || Object.keys(currentShellEnv).length === 0) return;
+    pi.registerTool(
+      createBashTool(cwd, {
+        spawnHook: ({ command, cwd: hookCwd, env }) => ({
+          command,
+          cwd: hookCwd,
+          env: { ...env, ...currentShellEnv },
+        }),
+      }),
+    );
+    injectedBashRegistered = true;
+  };
+  registerInjectedBashIfNeeded();
 
   if (typeof piRuntime.createLocalBashOperations === "function") {
     pi.on("user_bash", () => ({ operations: piRuntime.createLocalBashOperations() }));
@@ -135,6 +156,8 @@ export default async function (pi: ExtensionAPI): Promise<void> {
     currentShellEnv = await loadShellEnvMap();
     curatedTools = await loadCuratedTools();
     await warmPassSessionIfNeeded();
+    // A secret added since load makes the wrapper worth its cost from here on.
+    registerInjectedBashIfNeeded();
   });
 
   async function getDiagnosticReport() {
@@ -149,6 +172,9 @@ export default async function (pi: ExtensionAPI): Promise<void> {
       report += "These are injected via spawn hook — LLM never sees the values.\n";
     } else {
       report += "No shell env vars currently injected from auth.json.\n";
+      report +=
+        "The bash wrapper is therefore NOT registered, so bash keeps the host's\n" +
+        "built-in tool and its framed transcript card.\n";
       report +=
         'Add e.g. "GH_TOKEN": "!pass read \'pass://Vault/Item/password\'" then /reload.\n';
     }
@@ -293,10 +319,15 @@ export default async function (pi: ExtensionAPI): Promise<void> {
         finalEnv = envVar;
 
         const refMethod = await selectInBorderedPopup(ctx, {
-          title: "How do you want to provide the secret location?",
+          title: "Where does the secret come from?",
           items: [
-            { value: "manual", label: "Type the pass:// reference manually" },
-            { value: "lookup", label: "Look it up in Proton Pass" },
+            {
+              value: "capture",
+              label: "I have the key in hand — type or paste it now",
+              description: "Masked popup, stored in Proton Pass; only the reference is written",
+            },
+            { value: "lookup", label: "It is already in Proton Pass", description: "Browse vaults and pick the field" },
+            { value: "manual", label: "Type the pass:// reference manually", description: "Advanced" },
           ],
           helpText: "↑↓ • Enter • Esc = cancel",
           maxVisible: 5,
@@ -306,7 +337,15 @@ export default async function (pi: ExtensionAPI): Promise<void> {
           return;
         }
 
-        if (refMethod === "manual") {
+        if (refMethod === "capture") {
+          // The key never enters the conversation: it goes from the masked popup
+          // straight into pass-cli's stdin (see capture.ts).
+          passRef =
+            (await captureSecretIntoVault(ctx, {
+              label: envVar,
+              suggestedTitle: `${envVar} (OMP)`,
+            })) ?? null;
+        } else if (refMethod === "manual") {
           const manualRef = await inputInBorderedPopup(ctx, {
             title: "pass:// Reference",
             prompt: "Enter the full Proton Pass reference",
