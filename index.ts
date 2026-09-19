@@ -26,7 +26,7 @@ import {
 } from "./store.js";
 import { formatPassStatus, getPassStatus, loadCuratedTools, pickPassReference } from "./pass.js";
 import type { CuratedTool } from "./pass.js";
-import { captureSecretIntoVault } from "./credential-api.js";
+import { captureViaPassSecret } from "./capture-via-script.js";
 
 export {
   captureSecretIntoVault,
@@ -215,158 +215,57 @@ export default async function (pi: ExtensionAPI): Promise<void> {
 
   pi.registerCommand("proton-pass_setup", {
     description:
-      "Guided setup: pick a tool or enter a custom pass:// reference, write '!pass read …' to auth.json for transparent injection.",
-    handler: async (_args, ctx) => {
+      "Capture a secret into Proton Pass via the masked dialog and wire it into auth.json — one prompt, zero wizard. Usage: /proton-pass_setup ENV_VAR [item title]",
+    handler: async (args: string, ctx: Parameters<Parameters<typeof pi.registerCommand>[1]["handler"]>[1]) => {
       const authPath = getAuthFilePath();
 
-      ctx.ui.notify("Proton Pass Onboard — transparent env injection setup", "info");
+      // Args: ENV_VAR [vault/title]. Everything optional is defaulted, nothing is a menu.
+      const parts = (args ?? "").trim().split(/\s+/).filter(Boolean);
+      const envVarArg = parts[0] ?? "";
+      const rest = parts.slice(1).join(" ");
+      // "Vault/Item title" names the vault and the item; a bare rest is just the title.
+      const vaultInTitle = /^([A-Za-z0-9 _-]+)\/(.+)$/.exec(rest);
+      const vault = vaultInTitle?.[1] ?? "Personal";
+      const title = vaultInTitle?.[2] ?? rest;
 
-      const hasCurated = curatedTools.length > 0;
-      const firstChoices = [
-        hasCurated ? "Pick from a list of supported tools" : "",
-        "Enter environment variable + secret reference manually",
-        "Cancel",
-      ].filter(Boolean);
-
-      const mode = await selectInBorderedPopup(ctx, {
-        title: "Proton Pass Onboard — How would you like to start?",
-        items: firstChoices.map((c) => ({ value: c, label: c })),
-        helpText: "↑↓ • Enter • Esc = cancel",
-        maxVisible: 5,
-      });
-      if (!mode || mode === "Cancel") {
-        ctx.ui.notify("Onboarding cancelled.", "info");
+      let envVar = envVarArg;
+      if (!envVar) {
+        envVar = (await inputInBorderedPopup(ctx, {
+          title: "Environment variable",
+          prompt: "UPPER_SNAKE_CASE name the secret will be injected as (e.g. JEV_API_KEY)",
+          helpText: "Enter to confirm • Esc = cancel",
+        })) ?? "";
+        if (!envVar) {
+          ctx.ui.notify("Cancelled — nothing was captured.", "info");
+          return;
+        }
+      }
+      if (!/^[A-Z0-9_]+$/.test(envVar)) {
+        ctx.ui.notify(`"${envVar}" is not UPPER_SNAKE_CASE — nothing was captured.`, "error");
         return;
       }
+      const itemTitle = title || `${envVar} (OMP)`;
 
-      let finalEnv: string | null = null;
-      let passRef: string | null = null;
-
-      if (mode.startsWith("Pick from a list of supported tools")) {
-        if (curatedTools.length === 0) {
-          ctx.ui.notify("No curated tools available right now.", "warning");
-          return;
-        }
-
-        const chosenToolName = await selectInBorderedPopup(ctx, {
-          title: "Select tool (type to filter)",
-          items: curatedTools.map((p) => ({
-            value: p.name,
-            label: p.name,
-            description:
-              p.envVars.length > 0
-                ? `${p.primaryEnvVar ?? p.envVars[0] ?? ""} (+${String(p.envVars.length - 1)} more)`
-                : "custom / no standard env var",
-          })),
-          helpText: "↑↓ • Enter • Esc = cancel • Type to filter",
-          maxVisible: 16,
-        });
-        if (!chosenToolName) {
-          ctx.ui.notify("Onboarding cancelled.", "info");
-          return;
-        }
-
-        const tool = curatedTools.find((p) => p.name === chosenToolName);
-        if (!tool) {
-          ctx.ui.notify("Selected tool is no longer available.", "error");
-          return;
-        }
-
-        if (tool.envVars.length > 1) {
-          const chosenEnv = await selectInBorderedPopup(ctx, {
-            title: `Environment variable for ${tool.name}`,
-            items: tool.envVars.map((v) => ({
-              value: v,
-              label: v,
-              description: v === tool.primaryEnvVar ? "primary / recommended" : undefined,
-            })),
-            helpText: "↑↓ • Enter to choose which var to inject • Esc = back",
-            maxVisible: Math.min(12, tool.envVars.length + 2),
-          });
-          if (!chosenEnv) {
-            ctx.ui.notify("Onboarding cancelled.", "info");
-            return;
-          }
-          finalEnv = chosenEnv;
-        } else {
-          finalEnv = tool.primaryEnvVar ?? tool.envVars[0] ?? null;
-        }
-
-        if (!finalEnv) {
-          ctx.ui.notify("Selected tool has no declared environment variable.", "error");
-          return;
-        }
-
-        passRef = await pickPassReference(ctx);
-        if (!passRef) {
-          ctx.ui.notify("Onboarding cancelled.", "info");
-          return;
-        }
-      } else {
-        const envVar = await inputInBorderedPopup(ctx, {
-          title: "Environment variable name",
-          prompt: "Enter the UPPER_SNAKE_CASE name for the secret (e.g. GH_TOKEN)",
-          helpText: "Enter to confirm • Esc = cancel",
-        });
-        if (!envVar) {
-          ctx.ui.notify("Onboarding cancelled.", "info");
-          return;
-        }
-        if (!/^[A-Z0-9_]+$/.test(envVar)) {
-          ctx.ui.notify("Invalid env var name (must be UPPER_SNAKE_CASE).", "error");
-          return;
-        }
-        finalEnv = envVar;
-
-        const refMethod = await selectInBorderedPopup(ctx, {
-          title: "Where does the secret come from?",
-          items: [
-            {
-              value: "capture",
-              label: "I have the key in hand — type or paste it now",
-              description: "Masked popup, stored in Proton Pass; only the reference is written",
-            },
-            { value: "lookup", label: "It is already in Proton Pass", description: "Browse vaults and pick the field" },
-            { value: "manual", label: "Type the pass:// reference manually", description: "Advanced" },
-          ],
-          helpText: "↑↓ • Enter • Esc = cancel",
-          maxVisible: 5,
-        });
-        if (!refMethod) {
-          ctx.ui.notify("Onboarding cancelled.", "info");
-          return;
-        }
-
-        if (refMethod === "capture") {
-          // The key never enters the conversation: it goes from the masked popup
-          // straight into pass-cli's stdin (see capture.ts).
-          passRef =
-            (await captureSecretIntoVault(ctx, {
-              label: envVar,
-              suggestedTitle: `${envVar} (OMP)`,
-            })) ?? null;
-        } else if (refMethod === "manual") {
-          const manualRef = await inputInBorderedPopup(ctx, {
-            title: "pass:// Reference",
-            prompt: "Enter the full Proton Pass reference",
-            defaultValue: "pass://Vault/Item/field",
-            helpText: "Must start with pass:// • Enter to confirm • Esc = cancel",
-          });
-          if (!manualRef?.startsWith("pass://")) {
-            ctx.ui.notify("Invalid reference (must start with pass://) or cancelled.", "error");
-            return;
-          }
-          passRef = manualRef;
-        } else {
-          passRef = await pickPassReference(ctx);
-        }
-        if (!passRef) {
-          ctx.ui.notify("Onboarding cancelled.", "info");
-          return;
-        }
+      // THE ONE INTERACTION: pass-secret.sh opens its own masked dialog (macOS
+      // hidden-answer, or masked TTY) and pipes the value straight into
+      // pass-cli's stdin. The value never crosses this process, this file, an
+      // argv, or the transcript. Fingerprint read-back is the script's own.
+      ctx.ui.notify(
+        `A masked dialog is opening — paste the ${envVar} secret into it.\nNothing is stored until you confirm in that dialog.`,
+        "info",
+      );
+      const captured = await captureViaPassSecret({
+        title: itemTitle,
+        vault,
+        reason: `pi-proton-pass: /proton-pass_setup ${envVar}`,
+      });
+      if (!captured.ok) {
+        ctx.ui.notify(`Capture failed or cancelled — nothing was written.\n${captured.message}`, "warning");
+        return;
       }
+      const passRef = captured.ref;
 
-      const previewLine = `"${finalEnv}": "!pass read '${passRef}'"`;
+      const previewLine = `"${envVar}": "!pass read '${passRef}'"`;
       const previewMsg =
         `File: ${authPath}\n\n${previewLine}\n\n` +
         "After write: run /reload (or restart). The spawn hook will inject the variable into bash.\n" +
@@ -377,19 +276,19 @@ export default async function (pi: ExtensionAPI): Promise<void> {
         message: previewMsg,
       });
       if (!confirmed) {
-        ctx.ui.notify("Cancelled — nothing written.", "info");
+        ctx.ui.notify(`Captured in Proton Pass as "${itemTitle}", but NOT wired: re-run later or add by hand:\n${previewLine}`, "warning");
         return;
       }
 
-      let writeRes = await addAuthEntry(finalEnv, passRef);
+      let writeRes = await addAuthEntry(envVar, passRef);
 
       if (!writeRes.success && writeRes.message.includes("already exists")) {
         const overwrite = await confirmInBorderedPopup(ctx, {
-          title: `Key "${finalEnv}" already exists, overwrite?`,
+          title: `Key "${envVar}" already exists, overwrite?`,
           message: "Replace the current value in auth.json?",
         });
         if (overwrite) {
-          writeRes = await addAuthEntry(finalEnv, passRef, { overwrite: true });
+          writeRes = await addAuthEntry(envVar, passRef, { overwrite: true });
         } else {
           ctx.ui.notify(writeRes.message, "warning");
           return;
@@ -397,7 +296,7 @@ export default async function (pi: ExtensionAPI): Promise<void> {
       }
 
       if (writeRes.success) {
-        ctx.ui.notify(`Success. ${finalEnv} added to auth.json (0600).`, "info");
+        ctx.ui.notify(`✅ ${envVar} captured in Proton Pass and wired to auth.json (0600).`, "info");
         const doReload = await confirmInBorderedPopup(ctx, {
           title: "Activate now?",
           message: "Run /reload so the spawn hook starts injecting it this session?",
