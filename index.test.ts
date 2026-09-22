@@ -79,20 +79,23 @@ describe("@flosrn/pi-proton-pass", () => {
     expect(log.commands).toContain("proton-pass_diagnose");
   }, 30000);
 
-  // The wrapper shadows a built-in name, which costs `bash` its framed host card
-  // (the host marks a re-registered name non-built-in). With nothing to inject
-  // that price buys nothing, so it must not be paid.
-  it("leaves the built-in bash alone when there is nothing to inject", async () => {
-    await withAuthJson({});
+  // Shadowing a built-in name costs `bash` its framed host card (the host marks
+  // a re-registered name non-built-in), so secrets must reach bash some other
+  // way — whether auth.json holds any or not.
+  it("never shadows the built-in bash, even with secrets configured", async () => {
+    await withAuthJson({ PP_TEST_TOKEN: "literal-not-a-pass-ref" });
     const { api, log } = createApiStub();
     await factory(api);
     expect(log.tools).not.toContain("bash");
   }, 30000);
 
-  it("wraps bash once a literal secret is configured", async () => {
-    await withAuthJson({ GH_TOKEN: "literal-not-a-pass-ref" });
-    const { api, log } = createApiStub();
-    await factory(api);
-    expect(log.tools).toContain("bash");
+  it("exports configured secrets into the process env the built-in bash inherits", async () => {
+    await withAuthJson({ PP_TEST_TOKEN: "literal-not-a-pass-ref" });
+    try {
+      await factory(createApiStub().api);
+      expect(process.env.PP_TEST_TOKEN).toBe("literal-not-a-pass-ref");
+    } finally {
+      delete process.env.PP_TEST_TOKEN;
+    }
   }, 30000);
 });

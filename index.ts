@@ -1,13 +1,13 @@
 /**
  * Proton Pass integration for the Pi coding agent.
  *
- * Writes `!pass read 'pass://…'` references to auth.json and injects resolved
- * values into agent bash via spawnHook. The LLM never sees secret values.
+ * Writes `!pass read 'pass://…'` references to auth.json and exports resolved
+ * values into the host process env, which the built-in bash inherits. The LLM
+ * never sees secret values.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import * as piRuntime from "@earendil-works/pi-coding-agent";
-import { createBashTool } from "@earendil-works/pi-coding-agent";
 import { type Static, Type } from "typebox";
 
 import {
@@ -119,34 +119,32 @@ export default async function (pi: ExtensionAPI): Promise<void> {
   curatedTools = await loadCuratedTools();
   await warmPassSessionIfNeeded();
 
-  const cwd = process.cwd();
-
-  // Registering a tool under a built-in's name is not free: the host marks that
-  // name non-built-in (`setToolBuiltIn(name, false)`), and its transcript card
-  // then resolves with `useBuiltInRenderer: false`. For `bash` that costs the
-  // framed card — syntax-highlighted command, `Output` divider, the styled
-  // `⟨Wall: …s | Timeout: …s⟩` footer — and leaves the legacy shim's minimal
-  // renderer instead: a bold `bash <command>` line plus the raw model-facing
-  // result text, notices included. Measured on omp 18.0.6.
+  // Why process.env and not a bash wrapper. Registering a tool under a
+  // built-in's name makes the host mark it non-built-in (`setToolBuiltIn(name,
+  // false)`), and its transcript card then resolves with `useBuiltInRenderer:
+  // false`: bash loses the framed card — syntax-highlighted command, `Output`
+  // divider, `⟨Wall: …s⟩` footer. Measured on omp 18.0.6, and hit again on
+  // 2026-09-23 when the first secret landed in auth.json and the old "wrap only
+  // when there is something to inject" gate opened.
   //
-  // So the wrapper is registered only when it has something to inject. With an
-  // empty `auth.json` the spawn hook added zero variables and the whole cost was
-  // paid for nothing.
-  let injectedBashRegistered = false;
-  const registerInjectedBashIfNeeded = (): void => {
-    if (injectedBashRegistered || Object.keys(currentShellEnv).length === 0) return;
-    pi.registerTool(
-      createBashTool(cwd, {
-        spawnHook: ({ command, cwd: hookCwd, env }) => ({
-          command,
-          cwd: hookCwd,
-          env: { ...env, ...currentShellEnv },
-        }),
-      }),
-    );
-    injectedBashRegistered = true;
+  // The built-in bash spawns from `filterChildShellEnv(Bun.env)`
+  // (pi-utils procmgr `buildSpawnEnv`), cached on first use. Extensions load
+  // before the first tool call, so exporting here reaches every bash call of
+  // the session with the built-in card intact. Cost: other children of the
+  // host (MCP stdio servers, LSP) inherit the values too, and a secret added
+  // after startup reaches bash only after the host restarts.
+  const injected = new Set<string>();
+  const exportShellEnv = (): void => {
+    for (const name of injected) {
+      if (!(name in currentShellEnv)) delete process.env[name];
+    }
+    injected.clear();
+    for (const [name, value] of Object.entries(currentShellEnv)) {
+      process.env[name] = value;
+      injected.add(name);
+    }
   };
-  registerInjectedBashIfNeeded();
+  exportShellEnv();
 
   if (typeof piRuntime.createLocalBashOperations === "function") {
     pi.on("user_bash", () => ({ operations: piRuntime.createLocalBashOperations() }));
@@ -156,8 +154,7 @@ export default async function (pi: ExtensionAPI): Promise<void> {
     currentShellEnv = await loadShellEnvMap();
     curatedTools = await loadCuratedTools();
     await warmPassSessionIfNeeded();
-    // A secret added since load makes the wrapper worth its cost from here on.
-    registerInjectedBashIfNeeded();
+    exportShellEnv();
   });
 
   async function getDiagnosticReport() {
@@ -169,14 +166,14 @@ export default async function (pi: ExtensionAPI): Promise<void> {
     if (injectedNames.length > 0) {
       report += `Active vars (names only): ${injectedNames.join(", ")}\n`;
       report += "Source: top-level keys in auth.json using !pass read (or literals).\n";
-      report += "These are injected via spawn hook — LLM never sees the values.\n";
+      report +=
+        "Exported into the host process env at startup; the built-in bash inherits\n" +
+        "them and keeps its framed card. The LLM never sees the values.\n" +
+        "A key added since startup reaches bash after the host restarts.\n";
     } else {
       report += "No shell env vars currently injected from auth.json.\n";
       report +=
-        "The bash wrapper is therefore NOT registered, so bash keeps the host's\n" +
-        "built-in tool and its framed transcript card.\n";
-      report +=
-        'Add e.g. "GH_TOKEN": "!pass read \'pass://Vault/Item/password\'" then /reload.\n';
+        'Add e.g. "GH_TOKEN": "!pass read \'pass://Vault/Item/password\'" then restart.\n';
     }
 
     return {
